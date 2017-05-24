@@ -2,20 +2,15 @@
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3Object;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 
 
 /**
@@ -34,29 +29,28 @@ public class DynamoDataBaseService {
         return client;
     }
   
-    
-    
-    public void viewSharedFiles(AmazonDynamoDB dynamoDbClient,String userId) {
+    //views shared files from users who has shared with you
+    public void viewSharedFiles(AmazonDynamoDB dynamoDbClient,String userId,String bucketName) {
         DynamoDBMapper mapper = new DynamoDBMapper(dynamoDbClient);
         String partitionKey = userId;
         Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
         eav.put(":val1", new AttributeValue().withS(partitionKey));
-        
-         //FileShareObject book = mapper.load(FileShareObject.class, "4");
-         //System.out.println(book);
-         
          DynamoDBQueryExpression<FileShareObject> queryExpression = new DynamoDBQueryExpression<FileShareObject>()
             .withKeyConditionExpression("sharedID = :val1")
             .withExpressionAttributeValues(eav);
        
        List<FileShareObject> fileShareListObject = mapper.query(FileShareObject.class, queryExpression);
-      
-       
+     
        for (FileShareObject o: fileShareListObject) {
-           String[] owner_filePath = o.getOwnerName_filePath().split("_");
+           String[] owner_filePath = o.getOwnerName_filePath().split("_",2);
            String owner = owner_filePath[0];
            String filePath = owner_filePath[1];
-           System.out.println( filePath+" -shared to you by:"+ owner);
+           String realFp = o.getOwnerId()+"/"+filePath;
+           S3Object s3Object = User.getS3Connection().getObject(bucketName, realFp);
+           String lastModified= s3Object.getObjectMetadata().getLastModified().toString();
+           Long size = s3Object.getObjectMetadata().getContentLength();
+           
+           System.out.println("File Path: "+filePath+", SZ: "+size + ", LM: "+ " "+lastModified+", Uploader: " + owner);
        }
     }
     

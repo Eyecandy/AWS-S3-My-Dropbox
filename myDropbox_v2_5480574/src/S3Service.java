@@ -41,11 +41,12 @@ public class S3Service {
     // Create bucket named bucketName if it does not yet exist.
     // Catch all exceptions, and print error to stdout (System.out)
     
+    
+    
+    //checks if the object exists, used when sharing.
     public static boolean doesObjectExist(AmazonS3 s3client,String bucketName,String userId,String fileName) {
         String keyName = userId+"/"+fileName;
         return s3client.doesObjectExist(bucketName,keyName);
-        
-    
     }
     
     
@@ -87,7 +88,14 @@ public class S3Service {
     // Add the object in filePath on my computer to the bucketName bucket on S3, using the key keyName for the object
     // Catch all exceptions, and print error to stdout (System.out)
     public static void addObjectToBucket(AmazonS3 s3Client, String bucketName, String keyName, String filePath) {
+   
         File f = new File(filePath);
+        if (!f.exists()) {
+            System.out.println("file does not exist " + filePath);
+            return;
+            
+        }
+        
         keyName = User.getId() +"/"+f.getName();
         System.out.println(keyName);
         //keyName = "d";
@@ -120,13 +128,13 @@ public class S3Service {
             ObjectListing object_listing = s3Client.listObjects(bucketName,idString);
             while (true) {
                 for (Iterator<?> iterator =
-                     object_listing.getObjectSummaries().iterator();
-                     iterator.hasNext();) {
+                    object_listing.getObjectSummaries().iterator();
+                    iterator.hasNext();) {
                     S3ObjectSummary summary = (S3ObjectSummary)iterator.next();
                     String[] summaryA = summary.getKey().split("/");
                     int len = summaryA.length;
                     String fname = summaryA[len-1];
-                    System.out.println(fname);
+                    System.out.println(fname+" "+summary.getSize()+" "+ summary.getLastModified());
                     // s3.deleteObject(bucketName, summary.getKey());
                 }
 

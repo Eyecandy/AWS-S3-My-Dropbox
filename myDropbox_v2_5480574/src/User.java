@@ -17,6 +17,7 @@ public class User {
     private static AmazonS3 s3clientx;
     private static AmazonDynamoDB dynamoDbClientx;
     private static String namex;
+   
 
     
     
